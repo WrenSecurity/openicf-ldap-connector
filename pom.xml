@@ -27,11 +27,11 @@
     <parent>
         <groupId>org.forgerock.openicf.connectors</groupId>
         <artifactId>connectors-parent</artifactId>
-        <version>1.1.0.0-EA</version>
+        <version>1.1.0.0</version>
     </parent>
     <groupId>org.forgerock.openicf.connectors.ldap</groupId>
     <artifactId>openicf-ldap-connector</artifactId>
-    <version>1.1.0.0-EA</version>
+    <version>1.1.0.0</version>
     <packaging>bundle</packaging>
     <name>Generic JNDI based LDAP Connector</name>
     <description>Connector for Sun DSEE and OpenDJ and Generic LDAP</description>
@@ -118,7 +118,7 @@
         <dependency>
             <groupId>org.forgerock.opendj</groupId>
             <artifactId>opendj-server</artifactId>
-            <version>2.5.0-SNAPSHOT</version>
+            <version>2.4.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
