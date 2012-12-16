@@ -27,12 +27,14 @@ import static org.identityconnectors.common.CollectionUtil.newSet;
 import static org.identityconnectors.common.CollectionUtil.nullAsEmpty;
 import static org.identityconnectors.ldap.LdapUtil.checkedListByFilter;
 import static org.identityconnectors.ldap.LdapUtil.quietCreateLdapName;
+import static org.identityconnectors.ldap.LdapUtil.escapeDNValueOfJNDIReservedChars;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -42,6 +44,7 @@ import javax.naming.directory.ModificationItem;
 
 import org.identityconnectors.common.Pair;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
+import org.identityconnectors.framework.common.exceptions.UnknownUidException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.Name;
@@ -71,7 +74,7 @@ public class LdapUpdate extends LdapModifyOperation {
     }
 
     public Uid update(Set<Attribute> attrs) {
-        String entryDN = LdapSearches.findEntryDN(conn, oclass, uid);
+        String entryDN = escapeDNValueOfJNDIReservedChars(LdapSearches.getEntryDN(conn, oclass, uid));
         PosixGroupMember posixMember = new PosixGroupMember(entryDN);
 
         // Extract the Name attribute if any, to be used to rename the entry later.
@@ -281,6 +284,8 @@ public class LdapUpdate extends LdapModifyOperation {
     private void modifyAttributes(String entryDN, List<ModificationItem> modItems) {
         try {
             conn.getInitialContext().modifyAttributes(entryDN, modItems.toArray(new ModificationItem[modItems.size()]));
+        } catch (NameNotFoundException e) {
+            throw (UnknownUidException) new UnknownUidException(uid, oclass).initCause(e);
         } catch (NamingException e) {
             throw new ConnectorException(e);
         }
