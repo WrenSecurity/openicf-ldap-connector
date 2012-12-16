@@ -49,7 +49,7 @@
         <menu name="Ldap Core Docs">
             <!--item name="All Formats" href="docs.html" /-->
             <!--item name="Release Notes" href="./doc/release-notes/index.html" /-->
-            <item name="Developer Guide" href="./doc/ldap-connector-1.1.0.2-SNAPSHOT/index.html" />
+            <item name="Developer Guide" href="./doc/ldap-connector-1.1.0.1/index.html" />
         </menu>
 
         <menu ref="reports"/>
