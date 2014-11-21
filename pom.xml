@@ -28,7 +28,7 @@
     <parent>
         <groupId>org.forgerock.openicf.connectors</groupId>
         <artifactId>connectors-parent</artifactId>
-        <version>1.4.0.0</version>
+        <version>1.4.1.0</version>
     </parent>
     <groupId>org.forgerock.openicf.connectors</groupId>
     <artifactId>ldap-connector</artifactId>
@@ -53,6 +53,13 @@
     <properties>
         <connectorPackage>org.identityconnectors.ldap</connectorPackage>
         <connectorClass>LdapConnector</connectorClass>
+        <openicf.osgi.import.defaults>
+            org.forgerock.opendj.ldap*;version="[2.6.0, 3.0.0)";resolution:=optional
+        </openicf.osgi.import.defaults>
+        <!-- If we release this project, we need to include the Forgerock binary license -->
+        <include.binary.license>
+            ${project.build.directory}/maven-shared-archive-resources/legal-notices
+        </include.binary.license>
     </properties>
     <repositories>
         <repository>
@@ -105,6 +112,12 @@
             <artifactId>mockito-all</artifactId>
             <version>1.9.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.opendj</groupId>
+            <artifactId>opendj-ldap-sdk</artifactId>
+            <version>2.6.9</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
