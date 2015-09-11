@@ -32,15 +32,15 @@
     </parent>
     <groupId>org.forgerock.openicf.connectors</groupId>
     <artifactId>ldap-connector</artifactId>
-    <version>1.4.1.1-SNAPSHOT</version>
+    <version>1.4.1.0-RC3</version>
     <packaging>bundle</packaging>
     <name>Generic JNDI based LDAP Connector</name>
     <description>Connector for Sun DSEE and OpenDJ and Generic LDAP</description>
     <url>http://openicf.forgerock.org/connectors/ldap-connector</url>
     <scm>
-        <connection>scm:svn:https://svn.forgerock.org/openicf/branches/openicf-ldap-connector-1.4.1.x</connection>
-        <developerConnection>scm:svn:https://svn.forgerock.org/openicf/branches/openicf-ldap-connector-1.4.1.x</developerConnection>
-        <url>http://sources.forgerock.org/browse/openicf/branches/openicf-ldap-connector-1.4.1.x</url>
+        <connection>scm:svn:https://svn.forgerock.org/openicf/tags/openicf-ldap-connector-1.4.1.0-RC3</connection>
+        <developerConnection>scm:svn:https://svn.forgerock.org/openicf/tags/openicf-ldap-connector-1.4.1.0-RC3</developerConnection>
+        <url>http://sources.forgerock.org/browse/openicf/tags/openicf-ldap-connector-1.4.1.0-RC3</url>
     </scm>
     <issueManagement>
         <system>jira</system>
