@@ -1,24 +1,25 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.search;
 
@@ -42,6 +43,7 @@ import org.identityconnectors.framework.common.objects.filter.LessThanOrEqualFil
 import org.identityconnectors.framework.common.objects.filter.SingleValueAttributeFilter;
 import org.identityconnectors.framework.common.objects.filter.StartsWithFilter;
 import org.identityconnectors.ldap.LdapConstants;
+import org.identityconnectors.ldap.LdapUtil;
 import org.identityconnectors.ldap.schema.LdapSchemaMapping;
 
 public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
@@ -203,12 +205,13 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
             Object single = values.get(0);
             if (single == null) {
                 return null;
-            }
-            if (isDNAttribute(attrName)) {
+            } else if (isDNAttribute(attrName)) {
                 return LdapFilter.forEntryDN(single.toString());
-            }
-            if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(attrName)){
+            } else if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(attrName)){
                 return LdapFilter.forNativeFilter("("+LdapConstants.MS_GUID_ATTR+"="+guidStringtoByteString((String)values.get(0))+")");
+            } else if (mapping.isLdapUidAttributeBinary() && mapping.getLdapUidAttribute(null).equalsIgnoreCase(attrName)) {
+                return LdapFilter.forNativeFilter("(" + mapping.getLdapUidAttribute(null) + "=" +
+                        LdapUtil.escapeBinaryUid((String) values.get(0)) + ")");
             }
             builder = createBuilder(not);
             addSimpleFilter(attrName, "=", values.get(0), builder);

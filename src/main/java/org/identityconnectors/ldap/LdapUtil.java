@@ -511,6 +511,8 @@ public class LdapUtil {
             String uidAttr = conn.getConfiguration().getUidAttribute();
             if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(uidAttr)) {
                 return (ADLdapUtil.objectGUIDtoString(attrs.get(conn.getConfiguration().getUidAttribute())));
+            } else if (conn.getConfiguration().isBinaryUid()) {
+                return formatBinaryUid(attrs.get(conn.getConfiguration().getUidAttribute()));
             } else {
                 return (attrs.get(conn.getConfiguration().getUidAttribute()).get(0).toString());
             }
@@ -616,5 +618,46 @@ public class LdapUtil {
         }
         return false;
    }
+
+   /**
+    * Format value of given binary UID attribute into string HEX representation (e.g. '806bff27e32be611bbbf005056a6344f').
+    * @param uid UID {@link Attribute} instance to format. Can be null.
+    * @return Formatted value. Never null.
+    */
+    public static String formatBinaryUid(Attribute uid) {
+        if (uid == null) {
+            return null;
+        }
+        // Get byte array array representation of UID attribute
+        byte[] bytes = null;
+        try {
+            bytes = (byte[]) uid.get();
+        } catch (NamingException e){
+            log.error(e, "Reading of '" + uid.getID() + "' failed.");
+        }
+        // Format UID value to string representation
+        String value = new String();
+        for(int i = 0; i < bytes.length; i++) {
+            int hex = (int) bytes[i] & 0xFF;
+            value += hex <= 0xF ? "0" + Integer.toHexString(hex) : Integer.toHexString(hex);
+        }
+        return value;
+    }
+
+    /**
+     * Escape given formatted string value of UID attribute into byte string.
+     * @param value UID string value to escape. Never null.
+     * @return Escaped string or null when no value was given to escape. Can be null.
+     */
+    public static String escapeBinaryUid(String value) {
+        if (value == null) {
+            return null;
+        }
+        String escaped = new String();
+        for (int i = 0; i < value.length(); i = i + 2) {
+            escaped += "\\" + value.substring(i, i + 2);
+        }
+        return escaped;
+    }
 
 }

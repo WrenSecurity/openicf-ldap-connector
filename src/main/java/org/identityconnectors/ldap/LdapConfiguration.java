@@ -204,6 +204,11 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     private String uidAttribute = "entryUUID";
 
     /**
+     * Flag indicating whether UID attribute contains binary value.
+     */
+    private boolean binaryUid;
+
+    /**
      * Whether to read the schema from the server.
      */
     private boolean readSchema = true;
@@ -636,6 +641,14 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
         this.uidAttribute = uidAttribute;
     }
 
+    public boolean isBinaryUid() {
+        return binaryUid;
+    }
+
+    public void setBinaryUid(boolean binaryUid) {
+        this.binaryUid = binaryUid;
+    }
+
     public boolean isReadSchema() {
         return readSchema;
     }
@@ -873,6 +886,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
         builder.append(usePagedResultControl);
         builder.append(vlvSortAttribute);
         builder.append(uidAttribute);
+        builder.append(binaryUid);
         builder.append(readSchema);
         builder.append(useDNSSRVRecord);
         // Sync configuration properties.
