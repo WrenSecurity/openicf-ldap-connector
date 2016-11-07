@@ -1,28 +1,31 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  */
 package org.identityconnectors.ldap.search;
 
 import static org.testng.AssertJUnit.assertNull;
+
+import javax.naming.directory.SearchControls;
+
 import static org.testng.AssertJUnit.assertEquals;
 import org.testng.annotations.Test;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
@@ -163,6 +166,27 @@ public class LdapFilterTranslatorTests {
         assertEquals(LdapFilter.forEntryDN("dc=example,dc=com"), newTranslator().createContainsAllValuesExpression(containsAllValues, false));
 
         containsAllValues = (ContainsAllValuesFilter) FilterBuilder.containsAllValues(AttributeBuilder.build("entryDN", "dc=example,dc=com", "o=Acme,dc=example,dc=com"));
+        assertNull(newTranslator().createContainsAllValuesExpression(containsAllValues, false));
+    }
+
+    @Test
+    public void testContainerDN() {
+        ContainsFilter contains = (ContainsFilter) FilterBuilder.contains(AttributeBuilder.build("containerDN", "dc=example,dc=com"));
+        assertEquals(LdapFilter.forBaseDN("dc=example,dc=com", SearchControls.SUBTREE_SCOPE), newTranslator().createContainsExpression(contains, false));
+
+        StartsWithFilter startsWith = (StartsWithFilter) FilterBuilder.startsWith(AttributeBuilder.build("containerDN", "dc=example,dc=com"));
+        assertEquals(LdapFilter.forBaseDN("dc=example,dc=com", SearchControls.SUBTREE_SCOPE), newTranslator().createStartsWithExpression(startsWith, false));
+
+        EndsWithFilter endsWith = (EndsWithFilter) FilterBuilder.endsWith(AttributeBuilder.build("containerDN", "dc=example,dc=com"));
+        assertEquals(LdapFilter.forBaseDN("dc=example,dc=com", SearchControls.OBJECT_SCOPE), newTranslator().createEndsWithExpression(endsWith, false));
+
+        EqualsFilter equals = (EqualsFilter) FilterBuilder.equalTo(AttributeBuilder.build("containerDN", "dc=example,dc=com"));
+        assertEquals(LdapFilter.forBaseDN("dc=example,dc=com", SearchControls.ONELEVEL_SCOPE), newTranslator().createEqualsExpression(equals, false));
+
+        ContainsAllValuesFilter containsAllValues = (ContainsAllValuesFilter) FilterBuilder.containsAllValues(AttributeBuilder.build("containerDN", "dc=example,dc=com"));
+        assertEquals(LdapFilter.forBaseDN("dc=example,dc=com", SearchControls.SUBTREE_SCOPE), newTranslator().createContainsAllValuesExpression(containsAllValues, false));
+
+        containsAllValues = (ContainsAllValuesFilter) FilterBuilder.containsAllValues(AttributeBuilder.build("containerDN", "dc=example,dc=com", "o=Acme,dc=example,dc=com"));
         assertNull(newTranslator().createContainsAllValuesExpression(containsAllValues, false));
     }
 

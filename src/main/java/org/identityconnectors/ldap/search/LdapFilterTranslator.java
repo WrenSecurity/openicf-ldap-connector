@@ -23,11 +23,13 @@
  */
 package org.identityconnectors.ldap.search;
 
+import static org.identityconnectors.ldap.ADLdapUtil.guidStringtoByteString;
 import static org.identityconnectors.ldap.LdapEntry.isDNAttribute;
 import static org.identityconnectors.ldap.LdapUtil.escapeAttrValue;
-import static org.identityconnectors.ldap.ADLdapUtil.guidStringtoByteString;
 
 import java.util.List;
+
+import javax.naming.directory.SearchControls;
 
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
@@ -59,6 +61,8 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
     // be Undefined (cf. RFC 4511, section 4.5.1.7). But (a > X) would be Undefined
     // too, and so would be (!(a > X)).
 
+    private static final String CONTAINER_DN_ATTR = "containerDN";
+
     private final LdapSchemaMapping mapping;
     private final ObjectClass objectClass;
 
@@ -86,6 +90,9 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
         if (isDNAttribute(attrName)) {
             return LdapFilter.forEntryDN(filter.getValue());
         }
+        if (CONTAINER_DN_ATTR.equals(attrName)) {
+            return LdapFilter.forBaseDN(filter.getValue(), SearchControls.SUBTREE_SCOPE);
+        }
 
         StringBuilder builder = createBuilder(not);
         builder.append(attrName);
@@ -103,7 +110,7 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
         if (attrName == null) {
             return null;
         }
-        if (isDNAttribute(attrName)) {
+        if (isDNAttribute(attrName) || CONTAINER_DN_ATTR.equals(attrName)) {
             return LdapFilter.forEntryDN(filter.getValue());
         }
 
@@ -151,6 +158,9 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
         if (isDNAttribute(attrName)) {
             return LdapFilter.forEntryDN(filter.getValue());
         }
+        if (CONTAINER_DN_ATTR.equals(attrName)) {
+            return LdapFilter.forBaseDN(filter.getValue(), SearchControls.SUBTREE_SCOPE);
+        }
 
         StringBuilder builder = createBuilder(not);
         builder.append(attrName);
@@ -172,6 +182,9 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
         }
         if (isDNAttribute(attrName)) {
             return LdapFilter.forEntryDN(filter.getValue().toString());
+        }
+        if (CONTAINER_DN_ATTR.equals(attrName)) {
+            return LdapFilter.forBaseDN(filter.getValue().toString(), SearchControls.ONELEVEL_SCOPE);
         }
 
         StringBuilder builder = createBuilder(not);
@@ -205,7 +218,7 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
             Object single = values.get(0);
             if (single == null) {
                 return null;
-            } else if (isDNAttribute(attrName)) {
+            } else if (isDNAttribute(attrName) || CONTAINER_DN_ATTR.equals(attrName)) {
                 return LdapFilter.forEntryDN(single.toString());
             } else if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(attrName)){
                 return LdapFilter.forNativeFilter("("+LdapConstants.MS_GUID_ATTR+"="+guidStringtoByteString((String)values.get(0))+")");
@@ -217,7 +230,7 @@ public class LdapFilterTranslator extends AbstractFilterTranslator<LdapFilter> {
             addSimpleFilter(attrName, "=", values.get(0), builder);
             return finishBuilder(builder);
         default:
-            if (isDNAttribute(attrName)) {
+            if (isDNAttribute(attrName) || CONTAINER_DN_ATTR.equals(attrName)) {
                 return null; // Because the DN is single-valued.
             }
             builder = createBuilder(not);
