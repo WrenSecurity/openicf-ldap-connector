@@ -1,22 +1,22 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  */
@@ -138,14 +138,14 @@ public abstract class LdapConnectorTestBase {
     }
 
     @BeforeMethod
-	public void before() throws Exception {
+    public void before() throws Exception {
         if (!EmbeddedUtils.isRunning()) {
             startServer();
         }
     }
 
     @AfterMethod
-	public void after() throws Exception {
+    public void after() throws Exception {
         if (restartServerAfterEachTest()) {
             stopServer();
         }
@@ -226,20 +226,13 @@ public abstract class LdapConnectorTestBase {
         File configDir = new File(root, "config");
         File configFile = new File(configDir, "config.ldif");
         File schemaDir = new File(configDir, "schema");
-        File lockDir = new File(root, "locks");
-        if (!lockDir.mkdirs()) {
-            throw new IOException();
-        }
 
         try {
             DirectoryEnvironmentConfig config = new DirectoryEnvironmentConfig();
             config.setServerRoot(root);
             config.setConfigFile(configFile);
             config.setSchemaDirectory(schemaDir);
-            config.setLockDirectory(lockDir);
             EmbeddedUtils.startServer(config);
-        } catch (ConfigException e) {
-            throw (IOException) new IOException(e.getMessage()).initCause(e);
         } catch (InitializationException e) {
             throw (IOException) new IOException(e.getMessage()).initCause(e);
         }
