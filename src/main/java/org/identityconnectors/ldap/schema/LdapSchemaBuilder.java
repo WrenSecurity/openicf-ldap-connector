@@ -1,25 +1,26 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  * Portions Copyrighted 2013-2014 ForgeRock AS
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.schema;
 
@@ -30,13 +31,13 @@ import java.util.Set;
 
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.AttributeInfo.Flags;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.ObjectClassInfoBuilder;
+import org.identityconnectors.framework.common.objects.OperationOptionInfoBuilder;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.SchemaBuilder;
-import org.identityconnectors.framework.common.objects.AttributeInfo.Flags;
-import org.identityconnectors.framework.common.objects.OperationOptionInfoBuilder;
 import org.identityconnectors.framework.spi.operations.AuthenticateOp;
 import org.identityconnectors.framework.spi.operations.CreateOp;
 import org.identityconnectors.framework.spi.operations.DeleteOp;
@@ -48,10 +49,10 @@ import org.identityconnectors.framework.spi.operations.UpdateOp;
 import org.identityconnectors.ldap.LdapAttributeType;
 import org.identityconnectors.ldap.LdapConnection;
 import org.identityconnectors.ldap.LdapConnector;
+import org.identityconnectors.ldap.LdapConstants.ServerType;
 import org.identityconnectors.ldap.LdapNativeSchema;
 import org.identityconnectors.ldap.LdapUtil;
 import org.identityconnectors.ldap.ObjectClassMappingConfig;
-import org.identityconnectors.ldap.LdapConstants.ServerType;
 
 class LdapSchemaBuilder {
 
@@ -73,6 +74,7 @@ class LdapSchemaBuilder {
         return schema;
     }
 
+    @SuppressWarnings("unchecked")
     private void buildSchema() {
         SchemaBuilder schemaBld = new SchemaBuilder(LdapConnector.class);
 
@@ -113,15 +115,15 @@ class LdapSchemaBuilder {
                 schemaBld.removeSupportedObjectClass(SyncOp.class, oci);
             }
         }
-        
+
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildRunWithUser(), CreateOp.class, UpdateOp.class, DeleteOp.class);
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildRunWithPassword(), CreateOp.class, UpdateOp.class, DeleteOp.class);
-        
+
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildPageSize(), SearchOp.class);
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildPagedResultsCookie(), SearchOp.class);
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildPagedResultsOffset(), SearchOp.class);
         schemaBld.defineOperationOption(OperationOptionInfoBuilder.buildSortKeys(), SearchOp.class);
-        
+
         ObjectClassInfoBuilder objClassBld = new ObjectClassInfoBuilder();
         objClassBld.setType(LdapUtil.SERVER_INFO_NAME);
         ObjectClassInfo oci = objClassBld.build();

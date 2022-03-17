@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  *
  * "Portions Copyrighted 2013-2015 ForgeRock AS"
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap;
 
@@ -62,11 +63,11 @@ public class LdapUtil {
     public static final String SERVER_INFO_NAME = createSpecialName("SERVER_INFO");
 
     public static final ObjectClass SERVER_INFO_OBJCLASS = new ObjectClass(SERVER_INFO_NAME);
-    
+
     private static final String UNKNOWN_OBJCLASS_NAME = createSpecialName("UNKNOWN");
 
     public static final ObjectClass UNKNOWN_OBJCLASS = new ObjectClass(UNKNOWN_OBJCLASS_NAME);
-    
+
     private LdapUtil() {
     }
 
@@ -154,17 +155,17 @@ public class LdapUtil {
      * forward slash (/)
      */
     public static String escapeDNValueOfJNDIReservedChars(String DN) {
-	StringBuilder toBuilder = new StringBuilder();
-	for (int i = 0; i < DN.length(); i++) {
-	    char ch = DN.charAt(i);
-	    switch (ch) {
-	    case '/':
-		toBuilder.append("\\2f");
-		break;
-	    default:
-		toBuilder.append(ch);
-	    }
-	}
+    StringBuilder toBuilder = new StringBuilder();
+    for (int i = 0; i < DN.length(); i++) {
+        char ch = DN.charAt(i);
+        switch (ch) {
+        case '/':
+        toBuilder.append("\\2f");
+        break;
+        default:
+        toBuilder.append(ch);
+        }
+    }
         return toBuilder.toString();
     }
 
@@ -272,18 +273,16 @@ public class LdapUtil {
         return array;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> checkedListByFilter(List list, Class<T> clazz) {
+    public static <T> List<T> checkedListByFilter(List<Object> list, Class<T> clazz) {
         return new CheckedListByFilter<T>(list, clazz);
     }
 
-    @SuppressWarnings("unchecked")
     private static final class CheckedListByFilter<E> implements List<E> {
 
-        private final List list;
+        private final List<Object> list;
         private final Class<E> clazz;
 
-        public CheckedListByFilter(List list, Class<E> clazz) {
+        public CheckedListByFilter(List<Object> list, Class<E> clazz) {
             this.clazz = clazz;
             this.list = list;
         }
@@ -373,7 +372,11 @@ public class LdapUtil {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            return list.subList(fromIndex, toIndex);
+            List<E> result = new ArrayList<>();
+            for (Object element : list.subList(fromIndex, toIndex)) {
+                result.add(cast(element));
+            }
+            return result;
         }
 
         public Object[] toArray() {
@@ -381,11 +384,11 @@ public class LdapUtil {
         }
 
         public <T> T[] toArray(T[] a) {
-            Object[] result = list.toArray(a);
+            T[] result = list.toArray(a);
             for (Object o : result) {
                 cast(o);
             }
-            return (T[]) result;
+            return result;
         }
 
         @Override
@@ -405,9 +408,9 @@ public class LdapUtil {
 
         private final class Itr implements Iterator<E> {
 
-            private final Iterator iter;
+            private final Iterator<Object> iter;
 
-            public Itr(Iterator iter) {
+            public Itr(Iterator<Object> iter) {
                 this.iter = iter;
             }
 
@@ -441,9 +444,9 @@ public class LdapUtil {
 
         private final class ListItr implements ListIterator<E> {
 
-            private final ListIterator iter;
+            private final ListIterator<Object> iter;
 
-            public ListItr(ListIterator iter) {
+            public ListItr(ListIterator<Object> iter) {
                 this.iter = iter;
             }
 
@@ -513,7 +516,7 @@ public class LdapUtil {
             }
         }
     }
-    
+
     // This function builds a _memberId attribute which is a helper
     // that contains the group members' GUID
     public static org.identityconnectors.framework.common.objects.Attribute buildMemberIdAttribute(LdapConnection conn, javax.naming.directory.Attribute attr) {
@@ -552,7 +555,7 @@ public class LdapUtil {
         builder.setName(conn.getServerType().name());
         handler.handle(builder.build());
    }
-   
+
    public static String getObjectClassFilter(String[] oclasses) {
         StringBuilder filter = new StringBuilder();
         if (oclasses.length > 1) {
@@ -570,10 +573,10 @@ public class LdapUtil {
             }
         return filter.toString();
     }
-   
+
    public static ObjectClass guessObjectClass(LdapConnection lconn, javax.naming.directory.Attribute attr) throws NamingException{
         NamingEnumeration<?> valuesEnum = attr.getAll();
-        Set values = CollectionUtil.newCaseInsensitiveSet();
+        Set<String> values = CollectionUtil.newCaseInsensitiveSet();
 
         while (valuesEnum.hasMore()) {
             values.add((String)valuesEnum.next());
@@ -602,7 +605,7 @@ public class LdapUtil {
        log.info("No suitable ObjectClass found based on objectClass attribute value. Returning UNKNOWN ObjectClass");
        return UNKNOWN_OBJCLASS;
     }
-   
+
    public static boolean isSameDistinguishedName(String first, LdapContext context) {
         try {
             LdapName lfirst = new LdapName(first);

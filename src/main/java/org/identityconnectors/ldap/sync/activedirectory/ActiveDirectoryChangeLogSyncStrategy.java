@@ -20,22 +20,24 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
+ *
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.sync.activedirectory;
 
 import static org.identityconnectors.framework.common.objects.ObjectClassUtil.createSpecialName;
-import static org.identityconnectors.ldap.ADLdapUtil.objectGUIDtoString;
 import static org.identityconnectors.ldap.ADLdapUtil.fetchGroupMembersByRange;
+import static org.identityconnectors.ldap.ADLdapUtil.objectGUIDtoString;
 import static org.identityconnectors.ldap.LdapConstants.OBJECTCLASS_ATTR;
-import static org.identityconnectors.ldap.LdapUtil.getObjectClassFilter;
 import static org.identityconnectors.ldap.LdapUtil.buildMemberIdAttribute;
+import static org.identityconnectors.ldap.LdapUtil.getObjectClassFilter;
 import static org.identityconnectors.ldap.LdapUtil.getStringAttrValue;
 import static org.identityconnectors.ldap.LdapUtil.guessObjectClass;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -65,6 +67,7 @@ import org.identityconnectors.framework.common.objects.SyncResultsHandler;
 import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.SyncTokenResultsHandler;
+import org.identityconnectors.ldap.ADGroupType;
 import org.identityconnectors.ldap.ADLdapUtil;
 import org.identityconnectors.ldap.ADUserAccountControl;
 import org.identityconnectors.ldap.LdapConnection;
@@ -73,7 +76,6 @@ import org.identityconnectors.ldap.search.LdapInternalSearch;
 import org.identityconnectors.ldap.search.LdapSearchResultsHandler;
 import org.identityconnectors.ldap.search.SimplePagedSearchStrategy;
 import org.identityconnectors.ldap.sync.LdapSyncStrategy;
-import org.identityconnectors.ldap.ADGroupType;
 
 /**
  * An implementation of the sync operation based on the Update Sequence Numbers
@@ -108,7 +110,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
         if (oclass.is(DIRSYNC_EVENTS_OBJCLASS)) {
             handleEvents(token, handler, options);
         } else {
-            // ldapsearch -h host -p 389 -b "ou=test,dc=example,dc=com" -D "cn=administrator,cn=users,dc=example,dc=com" -w xxx "(uSNChanged>=52410)" 
+            // ldapsearch -h host -p 389 -b "ou=test,dc=example,dc=com" -D "cn=administrator,cn=users,dc=example,dc=com" -w xxx "(uSNChanged>=52410)"
             // We use the uSNchanged attribute to detect changes on entries and newly created entries.
             // We have to detect deleted entries as well. To do so, we use the filter (isDeleted==TRUE) to detect
             // the tombstones in the cn=delete objects,<defaultNamingContext> container.
@@ -116,7 +118,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
             final TreeMap<Integer, SyncDelta> changes = new TreeMap<Integer, SyncDelta>();
             final String[] usnChanged = {""};
             String waterMark = gethighestCommittedUSN();
-            
+
             if (token != null && logger.isWarning()) {
                 if (Integer.parseInt(token.getValue().toString()) > Integer.parseInt(waterMark)) {
                     //[OPENICF-402] The current SyncToken should never be greater than the highestCommittedUSN on the DC
@@ -231,8 +233,8 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
                         while (attrsEnum.hasMore()) {
                             javax.naming.directory.Attribute attr = attrsEnum.next();
                             String id = attr.getID();
-                            NamingEnumeration vals = attr.getAll();
-                            ArrayList values = new ArrayList();
+                            NamingEnumeration<?> vals = attr.getAll();
+                            List<Object> values = new ArrayList<>();
                             while (vals.hasMore()) {
                                 values.add(vals.next());
                             }
@@ -383,7 +385,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
             //Search for objects using the filter
             do {
                 ctx.setRequestControls(new Control[]{new DirSyncControl(dirSyncCookie)});
-                NamingEnumeration answer = ctx.search(defaultContext, searchFilter, getSearchCtls());
+                NamingEnumeration<SearchResult> answer = ctx.search(defaultContext, searchFilter, getSearchCtls());
                 while (answer.hasMoreElements()) {
                     answer.next();
                 }
@@ -427,13 +429,13 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
 
             do {
                 ctx.setRequestControls(new Control[]{new DirSyncControl(dirSyncCookie)});
-                NamingEnumeration answer = ctx.search(defaultContext, searchFilter, getSearchCtls());
+                NamingEnumeration<SearchResult> answer = ctx.search(defaultContext, searchFilter, getSearchCtls());
                 while (answer.hasMoreElements()) {
-                    SearchResult sr = (SearchResult) answer.next();
+                    SearchResult sr = answer.next();
                     Attributes attrs = sr.getAttributes();
                     String dn = sr.getNameInNamespace();
 
-                    // Group change 
+                    // Group change
                     if ((attrs.get("member;range=0-0") != null) || (attrs.get("member;range=1-1") != null)) {
                         changes.add(sr);
                     } // User Change
@@ -445,7 +447,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
                             if (attrs.get("WhenCreated") == null) {
                                 // Process move/rename
                                 // What interest us is mainly user getting out of sync scope...
-                                // The entry has been either moved or renamed and if now it is not 
+                                // The entry has been either moved or renamed and if now it is not
                                 // in the sync scope anymore, we take it
                                 change = isOutOfScope(dn);
                             }
@@ -520,7 +522,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
         javax.naming.directory.Attribute memberOut = attrs.get("member;range=0-0");
 
         if (memberIn != null) {
-            NamingEnumeration enu = memberIn.getAll();
+            NamingEnumeration<?> enu = memberIn.getAll();
             while (enu.hasMore()) {
                 // acount DN
                 String memberDn = (String) enu.next();
@@ -544,7 +546,7 @@ public class ActiveDirectoryChangeLogSyncStrategy implements LdapSyncStrategy {
             }
         }
         if (memberOut != null) {
-            NamingEnumeration enu = memberOut.getAll();
+            NamingEnumeration<?> enu = memberOut.getAll();
             while (enu.hasMore()) {
                 // acount DN
                 String memberDn = (String) enu.next();

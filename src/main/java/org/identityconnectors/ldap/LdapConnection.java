@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  *
  * Portions Copyrighted 2013-2016 ForgeRock AS
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap;
 
@@ -111,10 +112,10 @@ public class LdapConnection {
 
         // MS-AD ObjectGUID
         LDAP_BINARY_SYNTAX_ATTRS.add(LdapConstants.MS_GUID_ATTR);
-        
+
         // MS-AD ObjectSID
         LDAP_BINARY_SYNTAX_ATTRS.add(LdapConstants.MS_SID_ATTR);
-        
+
         // MS-AD Token-Groups
         LDAP_BINARY_SYNTAX_ATTRS.add(LdapConstants.MS_TOKEN_GROUPS_ATTR);
     }
@@ -127,7 +128,6 @@ public class LdapConnection {
     private LdapContext initCtx;
     private StartTlsResponse startTlsResponse;
     private Set<String> supportedControls;
-    private ServerType serverType;
 
     public LdapConnection(LdapConfiguration config) {
         this.config = config;
@@ -141,12 +141,12 @@ public class LdapConnection {
     public LdapConfiguration getConfiguration() {
         return config;
     }
-    
-    private Hashtable getDefaultContextEnv(){
-        final Hashtable env = new Hashtable(11);
-        env.put("java.naming.ldap.attributes.binary", 
-                LdapConstants.MS_GUID_ATTR + " " + 
-                LdapConstants.MS_SID_ATTR + " " + 
+
+    private Hashtable<Object, Object> getDefaultContextEnv(){
+        final Hashtable<Object, Object> env = new Hashtable<Object, Object>(11);
+        env.put("java.naming.ldap.attributes.binary",
+                LdapConstants.MS_GUID_ATTR + " " +
+                LdapConstants.MS_SID_ATTR + " " +
                 LdapConstants.MS_TOKEN_GROUPS_ATTR);
         env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_CTX_FACTORY);
         env.put(Context.PROVIDER_URL, getLdapUrls());
@@ -157,22 +157,21 @@ public class LdapConnection {
         }
         return env;
     }
-    
+
     private LdapContext getAnonymousContext() throws NamingException {
-        InitialLdapContext ctx = null;
         return new InitialLdapContext(getDefaultContextEnv(), null);
     }
-    
+
     private LdapContext getSaslContext() throws NamingException {
         // Set up environment for creating initial context
-        final Hashtable env = getDefaultContextEnv();
+        final Hashtable<Object, Object> env = getDefaultContextEnv();
         env.put(Context.REFERRAL, config.getReferralsHandling());
         // Request the use of the "GSSAPI" SASL mechanism
         // Authenticate by using already established Kerberos credentials
         env.put(Context.SECURITY_AUTHENTICATION, "GSSAPI");
         return new InitialLdapContext(env,null);
     }
-    
+
     public LdapContext getInitialContext() {
         if (initCtx != null) {
             return initCtx;
@@ -186,10 +185,10 @@ public class LdapConnection {
         } else {
             initCtx = connect(config.getPrincipal(), config.getCredentials());
         }
-        
+
         return initCtx;
     }
-    
+
     public LdapContext getRunAsContext(String principal, GuardedString credentials) {
         return connect(principal, credentials);
     }
@@ -301,7 +300,7 @@ public class LdapConnection {
     }
         return new Pair<AuthenticationResult, LdapContext>(authnResult, context);
     }
-    
+
     private static boolean hasPasswordExpiredControl(Control[] controls) {
         if (controls != null) {
             for (Control control : controls) {
@@ -335,7 +334,7 @@ public class LdapConnection {
         try {
             if (config.isStartTLS()) {
                 closeStartTLS(startTlsResponse);
-            }        
+            }
             quietClose(initCtx);
         } finally {
             initCtx = null;
@@ -351,7 +350,7 @@ public class LdapConnection {
             log.warn(e, null);
         }
     }
-    
+
     private static void closeStartTLS(StartTlsResponse startTlsResponse) {
         try {
             if (startTlsResponse != null) {
@@ -435,7 +434,7 @@ public class LdapConnection {
             NamingEnumeration<?> servers = attributes.getAll();
             while (servers.hasMoreElements()) {
                 Attribute attr = (Attribute) servers.nextElement();
-                Enumeration values = attr.getAll();
+                Enumeration<?> values = attr.getAll();
                 while (values.hasMoreElements()) {
                     String value = (String) values.nextElement();
                     String[] vals = value.split(" ");
@@ -472,7 +471,7 @@ public class LdapConnection {
                 useAnonContext = true;
                 ctx = getAnonymousContext();
             }
-            
+
             Attributes attrs = ctx.getAttributes("", new String[]{"vendorVersion", "vendorName", "highestCommittedUSN", "rootDomainNamingContext", "structuralObjectClass"});
             String vendorName = getStringAttrValue(attrs, "vendorName");
             if (null != vendorName) {

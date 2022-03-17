@@ -38,6 +38,8 @@ import org.forgerock.opendj.asn1.ASN1Reader;
 
 public class DirSyncResponseControl extends BasicControl {
 
+    private static final long serialVersionUID = 1L;
+
     public static final String OID = "1.2.840.113556.1.4.841";
 
     private long flag;
