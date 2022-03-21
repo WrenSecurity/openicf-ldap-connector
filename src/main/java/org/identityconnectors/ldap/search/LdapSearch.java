@@ -180,14 +180,14 @@ public class LdapSearch {
         List<String> baseDNs;
         int searchScope;
 
-        String filterEntryDN = filter != null ? filter.getEntryDN() : null;
-        if (filterEntryDN != null) {
-            // Would be good to check that filterEntryDN is under the configured base contexts.
+        String filterDN = filter != null ? filter.getBaseDN() : null;
+        if (filterDN != null) {
+            // Would be good to check that filterDN is under the configured base contexts.
             // However, the adapter is likely to pass entries outside the base contexts,
             // so not checking in order to be on the safe side.
             strategy = new DefaultSearchStrategy(true);
-            baseDNs = singletonList(filterEntryDN);
-            searchScope = SearchControls.OBJECT_SCOPE;
+            baseDNs = singletonList(filterDN);
+            searchScope = filter.getScope();
         } else {
             strategy = getSearchStrategy();
             baseDNs = getBaseDNs();
