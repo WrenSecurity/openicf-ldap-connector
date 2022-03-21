@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  *
  * Portions Copyrighted 2013-2014 ForgeRock AS
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap;
 
@@ -83,7 +84,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
      * The connection to the LDAP server.
      */
     private LdapConnection conn;
-    
+
     private enum UpdateType {
         REPLACE, ADD, REMOVE
     }
@@ -117,7 +118,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
 
     public void test() {
         if (loginContext != null) {
-            Subject.doAs(loginContext.getSubject(), new PrivilegedAction() {
+            Subject.doAs(loginContext.getSubject(), new PrivilegedAction<Object>() {
                 public Object run() {
                     doTest();
                     return null;
@@ -130,7 +131,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
 
     public void checkAlive() {
         if (loginContext != null) {
-            Subject.doAs(loginContext.getSubject(), new PrivilegedAction() {
+            Subject.doAs(loginContext.getSubject(), new PrivilegedAction<Object>() {
                 public Object run() {
                     conn.checkAlive();
                     return null;
@@ -186,7 +187,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
             LdapUtil.getServerInfo(conn, handler);
         } else {
             if (loginContext != null) {
-                Subject.doAs(loginContext.getSubject(), new PrivilegedAction() {
+                Subject.doAs(loginContext.getSubject(), new PrivilegedAction<Object>() {
                     public Object run() {
                         new LdapSearch(conn, objectClass, query, handler, options).execute();
                         return null;
@@ -212,7 +213,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
 
     public void delete(final ObjectClass objectClass, final Uid uid, final OperationOptions options) {
         if (loginContext != null) {
-            Subject.doAs(loginContext.getSubject(), new PrivilegedAction() {
+            Subject.doAs(loginContext.getSubject(), new PrivilegedAction<Object>() {
                 public Object run() {
                     new LdapDelete(conn, objectClass, uid, options).execute();
                     return null;
@@ -273,7 +274,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
 
     public void sync(final ObjectClass objectClass, final SyncToken token, final SyncResultsHandler handler, final OperationOptions options) {
         if (loginContext != null) {
-            Subject.doAs(loginContext.getSubject(), new PrivilegedAction() {
+            Subject.doAs(loginContext.getSubject(), new PrivilegedAction<Object>() {
                 public Object run() {
                     doSync(objectClass, token, handler, options);
                     return null;
@@ -283,7 +284,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
             doSync(objectClass, token, handler, options);
         }
     }
-    
+
     private SyncToken lastSyncToken(ObjectClass objectClass){
           if (config.isUseTimestampsForSync()) {
             return new TimestampsSyncStrategy(conn, objectClass).getLatestSyncToken();
@@ -303,7 +304,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
             }
         }
     }
-    
+
     private void doSync(ObjectClass objectClass, SyncToken token, SyncResultsHandler handler, OperationOptions options) {
         if (config.isUseTimestampsForSync()) {
             new TimestampsSyncStrategy(conn, objectClass).sync(token, handler, options);
@@ -326,7 +327,7 @@ public class LdapConnector implements TestOp, PoolableConnector, SchemaOp, Searc
             }
         }
     }
-    
+
     private void doTest(){
          List<String> badBC = new ArrayList<String>();
         List<String> badBCS = new ArrayList<String>();

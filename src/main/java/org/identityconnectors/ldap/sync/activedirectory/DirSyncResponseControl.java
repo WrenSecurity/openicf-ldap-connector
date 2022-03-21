@@ -20,6 +20,8 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
+ *
+ * Portions Copyright 2022 Wren Security.
  */
 /**
  * @author Gael Allioux <gael.allioux@forgerock.com>
@@ -27,41 +29,41 @@
 
 package org.identityconnectors.ldap.sync.activedirectory;
 
-import javax.naming.ldap.BasicControl;
 import java.io.IOException;
-import com.sun.jndi.ldap.Ber;
-import com.sun.jndi.ldap.BerDecoder;
+
+import javax.naming.ldap.BasicControl;
+
+import org.forgerock.opendj.asn1.ASN1;
+import org.forgerock.opendj.asn1.ASN1Reader;
 
 public class DirSyncResponseControl extends BasicControl {
-    
+
+    private static final long serialVersionUID = 1L;
+
     public static final String OID = "1.2.840.113556.1.4.841";
 
-    private int flag;
+    private long flag;
     private byte[] cookie;
-    private int maxLength;
 
     public DirSyncResponseControl(String id, boolean criticality, byte[] value) throws IOException {
         super(id, criticality, value);
         this.cookie = new byte[0];
-
-        if ((value != null) && (value.length > 0)) {
-            BerDecoder decoder = new BerDecoder(value, 0, value.length);
-            decoder.parseSeq(null);
-            flag = decoder.parseInt();
-            maxLength = decoder.parseInt();
-	    cookie = decoder.parseOctetString(Ber.ASN_OCTET_STR, null);
+        if (value != null && value.length > 0) {
+            ASN1Reader reader = ASN1.getReader(value);
+            reader.readStartSequence();
+            this.flag = reader.readInteger();
+            reader.readInteger(); // maxlength
+            this.cookie = reader.readOctetString().toByteArray();
+            reader.readEndSequence();
         }
     }
 
     public byte[] getResponseCookie() {
-	if (cookie.length != 0) {
-	    return cookie;
-	} else {
-            return null;
-	}
+        return cookie != null && cookie.length != 0 ? cookie : null;
     }
-    
+
     public boolean hasMore() {
-	return (0 != flag);
+        return flag != 0;
     }
+
 }

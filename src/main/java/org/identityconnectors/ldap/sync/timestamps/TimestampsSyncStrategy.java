@@ -20,21 +20,23 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
+ *
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.sync.timestamps;
 
 import static org.identityconnectors.ldap.ADLdapUtil.fetchGroupMembersByRange;
 import static org.identityconnectors.ldap.ADLdapUtil.objectGUIDtoString;
-import static org.identityconnectors.ldap.LdapUtil.buildMemberIdAttribute;
 import static org.identityconnectors.ldap.LdapConstants.OBJECTCLASS_ATTR;
+import static org.identityconnectors.ldap.LdapUtil.buildMemberIdAttribute;
 import static org.identityconnectors.ldap.LdapUtil.getObjectClassFilter;
 import static org.identityconnectors.ldap.LdapUtil.guessObjectClass;
 
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import javax.naming.NamingEnumeration;
@@ -62,13 +64,13 @@ import org.identityconnectors.ldap.ADGroupType;
 import org.identityconnectors.ldap.ADLdapUtil;
 import org.identityconnectors.ldap.ADUserAccountControl;
 import org.identityconnectors.ldap.LdapConnection;
-import org.identityconnectors.ldap.LdapConstants.ServerType;
 import org.identityconnectors.ldap.LdapConstants;
+import org.identityconnectors.ldap.LdapConstants.ServerType;
 import org.identityconnectors.ldap.LdapEntry;
 import org.identityconnectors.ldap.search.DefaultSearchStrategy;
 import org.identityconnectors.ldap.search.LdapInternalSearch;
-import org.identityconnectors.ldap.search.LdapSearchStrategy;
 import org.identityconnectors.ldap.search.LdapSearchResultsHandler;
+import org.identityconnectors.ldap.search.LdapSearchStrategy;
 import org.identityconnectors.ldap.search.SimplePagedSearchStrategy;
 import org.identityconnectors.ldap.sync.LdapSyncStrategy;
 
@@ -107,7 +109,7 @@ public class TimestampsSyncStrategy implements LdapSyncStrategy {
         SearchControls controls = LdapInternalSearch.createDefaultSearchControls();
         controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
         controls.setDerefLinkFlag(false);
-        
+
         if (null != options.getAttributesToGet() && options.getAttributesToGet().length != 0){
             attrsToGet = options.getAttributesToGet();
         }
@@ -223,8 +225,8 @@ public class TimestampsSyncStrategy implements LdapSyncStrategy {
                     while (attrsEnum.hasMore()) {
                         javax.naming.directory.Attribute attr = attrsEnum.next();
                         String id = attr.getID();
-                        NamingEnumeration vals = attr.getAll();
-                        ArrayList values = new ArrayList();
+                        NamingEnumeration<?> vals = attr.getAll();
+                        List<Object> values = new ArrayList<Object>();
                         while (vals.hasMore()) {
                             values.add(vals.next());
                         }
@@ -309,7 +311,7 @@ public class TimestampsSyncStrategy implements LdapSyncStrategy {
         logger.info("Using timestamp filter {0}", filter.toString());
         return filter.toString();
     }
-    
+
     static String[] getAttributesToGet(String[]... attrsLists) {
     int len = 0;
     for (String[] attrs : attrsLists) {

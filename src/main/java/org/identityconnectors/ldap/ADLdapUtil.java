@@ -20,6 +20,8 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
+ *
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap;
 
@@ -47,24 +49,24 @@ import org.identityconnectors.ldap.LdapConstants.ServerType;
 import org.identityconnectors.ldap.search.LdapInternalSearch;
 import static org.identityconnectors.ldap.LdapUtil.escapeDNValueOfJNDIReservedChars;
 
-/* 
- * This class provides static helper methods to handle 
+/*
+ * This class provides static helper methods to handle
  * some MS AD specific attributes over LDAP
  */
 public class ADLdapUtil {
-    
+
     private static final Log log = Log.getLog(ADLdapUtil.class);
-    
-    /* 
-     * Maximum number of members retrieved from a group in one search 
+
+    /*
+     * Maximum number of members retrieved from a group in one search
      */
     public static final int GROUP_MEMBERS_MAXRANGE = 1500;
-    
+
     /*
     * The time difference between Java and .Net for Dates
     */
     public static final long DIFF_NET_JAVA_FOR_DATE_AND_TIMES = 11644473600000L;
-    
+
     static String AddLeadingZero(int k) {
             return (k<=0xF)?"0" + Integer.toHexString(k):Integer.toHexString(k);
     }
@@ -78,7 +80,7 @@ public class ADLdapUtil {
             }
         }
         catch(NamingException e){}
-        
+
         StringBuilder sGUID = new StringBuilder(43);
         sGUID.append("<GUID=");
         sGUID.append(AddLeadingZero((int)GUID[3] & 0xFF));
@@ -102,10 +104,10 @@ public class ADLdapUtil {
         sGUID.append(AddLeadingZero((int)GUID[14] & 0xFF));
         sGUID.append(AddLeadingZero((int)GUID[15] & 0xFF));
         sGUID.append(">");
-        
+
         return sGUID.toString();
     }
-    
+
     public static String objectGUIDtoString(Attribute attr){
         byte[] GUID = null;
         try{
@@ -117,7 +119,7 @@ public class ADLdapUtil {
         catch(NamingException e){
             log.error(e, "Error reading " + attr.getID() + " attribute");
         }
-        
+
         StringBuilder sGUID = new StringBuilder(39);
         sGUID.append("<GUID=");
         for(int i=0;i<16;i++){
@@ -126,7 +128,7 @@ public class ADLdapUtil {
         sGUID.append(">");
         return sGUID.toString();
     }
-    
+
     public static String guidDashedStringtoByteString(String dashed){
         // <GUID=ac642e6e-6ab5-425a-bcc9-9f5067d46e3f>
         //   [3][2][1][0]-[5][4]-[7][6]-[8][9]-[10][11][12][13][14][15]
@@ -166,10 +168,10 @@ public class ADLdapUtil {
         bString.append(dashed.substring(38, 40));
         bString.append("\\");
         bString.append(dashed.substring(40, 42));
-        
+
         return bString.toString();
     }
-    
+
     public static String guidStringtoByteString(String dashed){
         // <GUID=2c6bfee3175c0a4e9af01182a2fb0ae1>
         if (dashed.length() != 39){
@@ -182,7 +184,7 @@ public class ADLdapUtil {
         }
         return bString.toString();
     }
-    
+
     public static String objectSIDtoString(Attribute attr) {
         byte[] SID = null;
         try{
@@ -198,15 +200,15 @@ public class ADLdapUtil {
         if (SID == null) {
             return null;
         }
-        
+
         if (SID.length < 8 || SID.length > 68){
             throw new ConnectorException(LdapConstants.MS_SID_ATTR+" attribute has the wrong length ("+SID.length+"). Should be between 8 and 68 bytes.");
         }
-        
+
         // Add the 'S' prefix
         StringBuilder strSID = new StringBuilder("S-");
 
-        // bytes[0] : in the array is the version (must be 1 but might 
+        // bytes[0] : in the array is the version (must be 1 but might
         // change in the future)
         strSID.append(SID[0]).append('-');
 
@@ -237,13 +239,13 @@ public class ADLdapUtil {
         // That's it - we have the SID
         return strSID.toString();
     }
-    
-    public static List fetchTokenGroupsByDn(LdapConnection conn, LdapEntry entry) {
-        List groups = new ArrayList();
+
+    public static List<String> fetchTokenGroupsByDn(LdapConnection conn, LdapEntry entry) {
+        List<String> groups = new ArrayList<String>();
         try {
             Attributes attrs = conn.getInitialContext().getAttributes(escapeDNValueOfJNDIReservedChars(entry.getDN().toString()), new String[]{LdapConstants.MS_TOKEN_GROUPS_ATTR});
             Attribute attr = attrs.get(LdapConstants.MS_TOKEN_GROUPS_ATTR);
-            NamingEnumeration ae = attr.getAll();
+            NamingEnumeration<?> ae = attr.getAll();
             while (ae.hasMore()) {
                 groups.add(objectSIDtoString((byte[])ae.next()));
             }
@@ -252,27 +254,27 @@ public class ADLdapUtil {
         }
         return groups;
     }
-    
-    public static List fetchGroupMembersByRange(LdapConnection conn, SearchResult result){
+
+    public static List<Object> fetchGroupMembersByRange(LdapConnection conn, SearchResult result){
         return fetchGroupMembersByRange(conn, LdapEntry.create(null, result));
     }
-    
+
     /*
      * This method returns the list of members when the group has over 1500 members.
-     * 
+     *
      */
-    public static List fetchGroupMembersByRange(LdapConnection conn, LdapEntry entry){
+    public static List<Object> fetchGroupMembersByRange(LdapConnection conn, LdapEntry entry){
         boolean done = false;
         int first = 0;
         int last = GROUP_MEMBERS_MAXRANGE -1;
-        List members = new ArrayList();
+        List<Object> members = new ArrayList<>();
         // get the first slice (0-1499)
         org.identityconnectors.framework.common.objects.Attribute range = conn.getSchemaMapping().createAttribute(ObjectClass.GROUP, String.format("member;range=%d-%d",first,last), entry, false);
         if (range != null){
             members.addAll(range.getValue());
             first = last +1;
             last = first + GROUP_MEMBERS_MAXRANGE -1;
-            
+
             while (!done) {
                 try {
                     SearchControls controls = LdapInternalSearch.createDefaultSearchControls();
@@ -299,35 +301,35 @@ public class ADLdapUtil {
         }
         return members;
     }
-    
+
     public static Date getJavaDateFromADTime(String adTime) {
         long milliseconds = (Long.parseLong(adTime) / 10000) - DIFF_NET_JAVA_FOR_DATE_AND_TIMES;
         return new Date(milliseconds);
     }
-    
+
     public static String getADTimeFromJavaDate(Date date) {
         return Long.toString((date.getTime()  + DIFF_NET_JAVA_FOR_DATE_AND_TIMES)* 10000);
     }
-    
+
     public static String getADTimeFromISO8601Date(String date) throws ParseException{
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return getADTimeFromJavaDate(df.parse(date));
     }
-    
+
     public static String getADLdapDatefromJavaDate(Date date) {
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df.format(date)+".0Z";
     }
-    
+
     public static String getISO8601DatefromJavaDate(Date date) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df.format(date);
     }
-    
-    
+
+
     public static org.identityconnectors.framework.common.objects.Attribute convertMSEpochToISO8601(Attribute attr){
         if (attr != null){
             String attrName = attr.getID();
@@ -348,7 +350,7 @@ public class ADLdapUtil {
         }
         return null;
     }
-    
+
     public static boolean isServerMSADFamily(ServerType type){
         switch (type) {
             case MSAD:

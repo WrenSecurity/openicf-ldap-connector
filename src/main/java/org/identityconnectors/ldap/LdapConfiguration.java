@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
  *
  * Portions Copyrighted 2013-2016 ForgeRock AS
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap;
 
@@ -61,7 +62,7 @@ import org.identityconnectors.ldap.LdapConstants.ServerType;
  */
 @ConfigurationClass(skipUnsupported = true)
 public class LdapConfiguration extends AbstractConfiguration implements StatefulConfiguration {
-    
+
     // This variable is not exposed as a config property but is cached
     // at runtime by the connector
     private ServerType serverType = null;
@@ -87,7 +88,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
      * Whether the port is a secure SSL port.
      */
     private boolean ssl;
-    
+
     /**
      * Whether to use startTLS.
      */
@@ -126,12 +127,12 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
      * will be written to.
      */
     private String passwordAttribute = "userPassword";
-    
+
     /**
      * The authentication mechanism to use. Either "simple" or "SASL-GSSAPI".
      * Defaults to "simple"
      */
-    
+
     private String authType = "simple";
 
     /**
@@ -434,11 +435,11 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     public boolean isSsl() {
         return ssl;
     }
-    
+
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
     }
-    
+
     public boolean isStartTLS() {
         return startTLS;
     }
@@ -471,15 +472,15 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     public void setCredentials(GuardedString credentials) {
         this.credentials = credentials != null ? credentials.copy() : null;
     }
-    
+
     public String getAuthType(){
         return authType;
     }
-    
+
     public void setAuthType(String authType){
         this.authType = authType;
     }
-    
+
     public String[] getBaseContexts() {
         return baseContexts.clone();
     }
@@ -663,7 +664,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     }
 
     public void setBaseContextsToSynchronize(String... baseContextsToSynchronize) {
-        this.baseContextsToSynchronize = (String[]) baseContextsToSynchronize.clone();
+        this.baseContextsToSynchronize = baseContextsToSynchronize.clone();
     }
 
     @ConfigurationProperty(operations = { SyncOp.class }, required = true)
@@ -672,7 +673,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     }
 
     public void setObjectClassesToSynchronize(String... objectClassesToSynchronize) {
-        this.objectClassesToSynchronize = (String[]) objectClassesToSynchronize.clone();
+        this.objectClassesToSynchronize = objectClassesToSynchronize.clone();
     }
 
     @ConfigurationProperty(operations = { SyncOp.class })
@@ -681,7 +682,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     }
 
     public void setAttributesToSynchronize(String... attributesToSynchronize) {
-        this.attributesToSynchronize = (String[]) attributesToSynchronize.clone();
+        this.attributesToSynchronize = attributesToSynchronize.clone();
     }
 
     @ConfigurationProperty(operations = { SyncOp.class })
@@ -690,7 +691,7 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
     }
 
     public void setModifiersNamesToFilterOut(String... modifiersNamesToFilterOut) {
-        this.modifiersNamesToFilterOut = (String[]) modifiersNamesToFilterOut.clone();
+        this.modifiersNamesToFilterOut = modifiersNamesToFilterOut.clone();
     }
 
     @ConfigurationProperty(operations = { SyncOp.class })
@@ -919,11 +920,11 @@ public class LdapConfiguration extends AbstractConfiguration implements Stateful
         }
         return false;
     }
-    
+
     public void cacheServerType(ServerType serverType) {
         this.serverType = serverType;
     }
-    
+
     public ServerType getServerType() {
         return serverType;
     }

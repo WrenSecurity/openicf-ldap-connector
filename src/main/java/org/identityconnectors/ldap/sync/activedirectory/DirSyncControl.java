@@ -20,17 +20,25 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
+ *
+ * Portions Copyright 2022 Wren Security.
  */
 /**
  * @author Gael Allioux <gael.allioux@forgerock.com>
  */
 package org.identityconnectors.ldap.sync.activedirectory;
 
-import com.sun.jndi.ldap.BerEncoder;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
 import javax.naming.ldap.BasicControl;
 
+import org.forgerock.opendj.asn1.ASN1;
+import org.forgerock.opendj.asn1.ASN1Writer;
+
 public class DirSyncControl extends BasicControl {
+
+    private static final long serialVersionUID = 1L;
 
     public static final String OID = "1.2.840.113556.1.4.841";
     /**
@@ -54,12 +62,13 @@ public class DirSyncControl extends BasicControl {
     }
 
     private byte[] setEncodedValue(int maxAttrCount, byte[] cookie) throws IOException {
-        final BerEncoder ber = new BerEncoder(64);
-        ber.beginSeq(48);
-        ber.encodeInt(flags);
-        ber.encodeInt(maxAttrCount);
-        ber.encodeOctetString(cookie, 4);
-        ber.endSeq();
-        return ber.getTrimmedBuf();
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(64);
+        ASN1Writer writer = ASN1.getWriter(buffer);
+        writer.writeStartSequence((byte) 48);
+        writer.writeInteger(flags);
+        writer.writeInteger(maxAttrCount);
+        writer.writeOctetString(cookie);
+        writer.writeEndSequence();
+        return buffer.toByteArray();
     }
 }
