@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
- * 
+ *
  * "Portions Copyrighted 2013-2015 Forgerock AS"
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.schema;
 
@@ -68,6 +69,7 @@ import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.ldap.LdapConnection;
 import org.identityconnectors.ldap.LdapConstants;
 import org.identityconnectors.ldap.LdapEntry;
+import org.identityconnectors.ldap.LdapUtil;
 import org.identityconnectors.ldap.ObjectClassMappingConfig;
 
 /**
@@ -174,7 +176,7 @@ public class LdapSchemaMapping {
         if (result == null && !AttributeUtil.isSpecialName(attrName)) {
             result = attrName;
         }
-        
+
         if (result != null && transfer && conn.needsBinaryOption(result)) {
             result = addBinaryOption(result);
         }
@@ -219,6 +221,14 @@ public class LdapSchemaMapping {
     }
 
     /**
+     * Return true when LDAP attribute which corresponds to {@link Uid} contains binary value,
+     * false is returned otherwise.
+     */
+    public boolean isLdapUidAttributeBinary() {
+        return conn.getConfiguration().isBinaryUid();
+    }
+
+    /**
      * Returns the LDAP attribute which corresponds to {@link Name} for the
      * given object class. Might return {@code null} if, for example, the
      * object class was not configured explicitly in the configuration.
@@ -259,13 +269,14 @@ public class LdapSchemaMapping {
 
     public Uid createUid(String ldapUidAttr, Attributes attributes) {
         String value = null;
-        if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(ldapUidAttr)){
+        if (LdapConstants.MS_GUID_ATTR.equalsIgnoreCase(ldapUidAttr)) {
             javax.naming.directory.Attribute attr = attributes.get(ldapUidAttr);
             if (attr != null) {
                 value = objectGUIDtoString(attr);
             }
-        }
-        else{
+        } else if (conn.getConfiguration().isBinaryUid()) {
+            value = LdapUtil.formatBinaryUid(attributes.get(ldapUidAttr));
+        } else {
             value = getStringAttrValue(attributes, ldapUidAttr);
         }
         if (value != null) {
@@ -359,7 +370,7 @@ public class LdapSchemaMapping {
         }
         return ldapAttr;
     }
-    
+
     public GuardedPasswordAttribute encodePassword(ObjectClass oclass, Attribute attr) {
         assert attr.is(OperationalAttributes.PASSWORD_NAME) || attr.is(OperationalAttributes.CURRENT_PASSWORD_NAME);
 

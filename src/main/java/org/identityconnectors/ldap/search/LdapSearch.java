@@ -61,6 +61,7 @@ import org.identityconnectors.ldap.GroupHelper;
 import org.identityconnectors.ldap.LdapConnection;
 import org.identityconnectors.ldap.LdapConstants;
 import org.identityconnectors.ldap.LdapEntry;
+import org.identityconnectors.ldap.LdapUtil;
 import org.identityconnectors.ldap.schema.LdapSchemaMapping;
 
 import static java.util.Collections.singletonList;
@@ -306,10 +307,13 @@ public class LdapSearch {
                 attribute = AttributeBuilder.build(LdapConstants.MS_SID_ATTR, objectSIDtoString(entry.getAttributes().get(LdapConstants.MS_SID_ATTR)));
             } else if (LdapConstants.MS_TOKEN_GROUPS_ATTR.equalsIgnoreCase(attrName)) {
                 attribute = AttributeBuilder.build(LdapConstants.MS_TOKEN_GROUPS_ATTR, fetchTokenGroupsByDn(conn, entry));
-            } else if ( ADLdapUtil.isServerMSADFamily(conn.getServerType()) && ADUserAccountControl.AD_CONTROLS_DATES.contains(attrName)) {
-                    attribute = convertMSEpochToISO8601(entry.getAttributes().get(attrName));
+            } else if (ADLdapUtil.isServerMSADFamily(conn.getServerType()) && ADUserAccountControl.AD_CONTROLS_DATES.contains(attrName)) {
+                attribute = convertMSEpochToISO8601(entry.getAttributes().get(attrName));
+            } else if (conn.getConfiguration().isBinaryUid() && conn.getConfiguration().getUidAttribute().equalsIgnoreCase(attrName)) {
+                attribute = AttributeBuilder.build(conn.getConfiguration().getUidAttribute(), LdapUtil.formatBinaryUid(
+                        entry.getAttributes().get(conn.getConfiguration().getUidAttribute())));
             } else {
-                    attribute = conn.getSchemaMapping().createAttribute(oclass, attrName, entry, emptyAttrWhenNotFound);
+                attribute = conn.getSchemaMapping().createAttribute(oclass, attrName, entry, emptyAttrWhenNotFound);
             }
 
             if (ObjectClass.GROUP.equals(oclass) && conn.getConfiguration().getGroupMemberAttribute().equalsIgnoreCase(attrName)) {

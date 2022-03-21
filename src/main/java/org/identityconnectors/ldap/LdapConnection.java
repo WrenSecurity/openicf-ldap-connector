@@ -29,45 +29,44 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static org.identityconnectors.common.CollectionUtil.newCaseInsensitiveSet;
 import static org.identityconnectors.common.StringUtil.isNotBlank;
+import static org.identityconnectors.ldap.ADLdapUtil.isServerMSADFamily;
 import static org.identityconnectors.ldap.LdapUtil.getStringAttrValue;
 import static org.identityconnectors.ldap.LdapUtil.getStringAttrValues;
 import static org.identityconnectors.ldap.LdapUtil.nullAsEmpty;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
-import java.util.Enumeration;
 
 import javax.naming.AuthenticationException;
 import javax.naming.CommunicationException;
 import javax.naming.Context;
-import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import javax.naming.ldap.StartTlsRequest;
-import javax.naming.ldap.StartTlsResponse;
+import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
-import javax.naming.ldap.Control;
+import javax.naming.ldap.StartTlsRequest;
+import javax.naming.ldap.StartTlsResponse;
 
 import org.identityconnectors.common.Pair;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.common.security.GuardedString.Accessor;
-import org.identityconnectors.framework.common.exceptions.ConnectorException;
-import org.identityconnectors.framework.common.exceptions.PasswordExpiredException;
 import org.identityconnectors.framework.common.exceptions.ConnectionFailedException;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.exceptions.InvalidCredentialException;
-import org.identityconnectors.ldap.schema.LdapSchemaMapping;
-import org.identityconnectors.ldap.schema.ADStaticSchema;
-
-import static org.identityconnectors.ldap.ADLdapUtil.isServerMSADFamily;
+import org.identityconnectors.framework.common.exceptions.PasswordExpiredException;
 import org.identityconnectors.ldap.LdapConstants.ServerType;
+import org.identityconnectors.ldap.schema.ADStaticSchema;
+import org.identityconnectors.ldap.schema.LdapSchemaMapping;
 import org.identityconnectors.ldap.schema.LdapStaticSchema;
 
 public class LdapConnection {
@@ -142,12 +141,13 @@ public class LdapConnection {
         return config;
     }
 
-    private Hashtable<Object, Object> getDefaultContextEnv(){
+    private Hashtable<Object, Object> getDefaultContextEnv() {
         final Hashtable<Object, Object> env = new Hashtable<Object, Object>(11);
         env.put("java.naming.ldap.attributes.binary",
                 LdapConstants.MS_GUID_ATTR + " " +
                 LdapConstants.MS_SID_ATTR + " " +
-                LdapConstants.MS_TOKEN_GROUPS_ATTR);
+                LdapConstants.MS_TOKEN_GROUPS_ATTR +
+                (config.isBinaryUid() ? " " + config.getUidAttribute() : ""));
         env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_CTX_FACTORY);
         env.put(Context.PROVIDER_URL, getLdapUrls());
         env.put(Context.REFERRAL, "follow");
@@ -561,7 +561,8 @@ public class LdapConnection {
     }
 
     public boolean isBinarySyntax(String attrName) {
-        return LDAP_BINARY_SYNTAX_ATTRS.contains(attrName);
+        return LDAP_BINARY_SYNTAX_ATTRS.contains(attrName) || (config.isBinaryUid() &&
+                config.getUidAttribute().equalsIgnoreCase(attrName));
     }
 
     public enum AuthenticationResultType {
