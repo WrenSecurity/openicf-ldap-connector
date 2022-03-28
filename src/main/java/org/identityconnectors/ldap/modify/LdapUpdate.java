@@ -1,26 +1,27 @@
 /*
  * ====================
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
- * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.     
- * 
- * The contents of this file are subject to the terms of the Common Development 
- * and Distribution License("CDDL") (the "License").  You may not use this file 
+ *
+ * Copyright 2008-2009 Sun Microsystems, Inc. All rights reserved.
+ *
+ * The contents of this file are subject to the terms of the Common Development
+ * and Distribution License("CDDL") (the "License").  You may not use this file
  * except in compliance with the License.
- * 
- * You can obtain a copy of the License at 
+ *
+ * You can obtain a copy of the License at
  * http://IdentityConnectors.dev.java.net/legal/license.txt
- * See the License for the specific language governing permissions and limitations 
- * under the License. 
- * 
+ * See the License for the specific language governing permissions and limitations
+ * under the License.
+ *
  * When distributing the Covered Code, include this CDDL Header Notice in each file
  * and include the License file at identityconnectors/legal/license.txt.
- * If applicable, add the following below this CDDL Header, with the fields 
- * enclosed by brackets [] replaced by your own identifying information: 
+ * If applicable, add the following below this CDDL Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
  * ====================
- * 
+ *
  * "Portions Copyrighted 2013-2015 Forgerock AS"
+ * Portions Copyright 2022 Wren Security.
  */
 package org.identityconnectors.ldap.modify;
 
@@ -28,17 +29,17 @@ import static org.identityconnectors.common.CollectionUtil.isEmpty;
 import static org.identityconnectors.common.CollectionUtil.newSet;
 import static org.identityconnectors.common.CollectionUtil.nullAsEmpty;
 import static org.identityconnectors.ldap.LdapUtil.checkedListByFilter;
-import static org.identityconnectors.ldap.LdapUtil.quietCreateLdapName;
 import static org.identityconnectors.ldap.LdapUtil.escapeDNValueOfJNDIReservedChars;
 import static org.identityconnectors.ldap.LdapUtil.normalizeLdapString;
+import static org.identityconnectors.ldap.LdapUtil.quietCreateLdapName;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.naming.NameAlreadyBoundException;
-import java.text.ParseException;
 
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -49,6 +50,8 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InvalidAttributeValueException;
 import javax.naming.directory.ModificationItem;
+import javax.naming.ldap.BasicControl;
+import javax.naming.ldap.Control;
 import javax.naming.ldap.LdapContext;
 
 import org.identityconnectors.common.Pair;
@@ -67,12 +70,12 @@ import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.ldap.ADGroupType;
 import org.identityconnectors.ldap.ADUserAccountControl;
 import org.identityconnectors.ldap.GroupHelper;
-import org.identityconnectors.ldap.LdapConnection;
-import org.identityconnectors.ldap.LdapModifyOperation;
-import org.identityconnectors.ldap.LdapConstants;
 import org.identityconnectors.ldap.GroupHelper.GroupMembership;
 import org.identityconnectors.ldap.GroupHelper.Modification;
 import org.identityconnectors.ldap.LdapAuthenticate;
+import org.identityconnectors.ldap.LdapConnection;
+import org.identityconnectors.ldap.LdapConstants;
+import org.identityconnectors.ldap.LdapModifyOperation;
 import org.identityconnectors.ldap.schema.GuardedPasswordAttribute;
 import org.identityconnectors.ldap.schema.GuardedPasswordAttribute.Accessor;
 import org.identityconnectors.ldap.search.LdapSearches;
@@ -369,7 +372,7 @@ public class LdapUpdate extends LdapModifyOperation {
                     // No current password provided - we use 'replace'
                     if (passwords.second == null) {
                         modItems.add(new ModificationItem(ldapModifyOp, passwordAttr));
-                        modifyAttributes(entryDN, modItems, context);
+                        handlePasswordReset(entryDN, modItems, context);
                     } else {
                         // We may have different implementation of Password Self service depending on the target directory
                         switch (conn.getServerType()) {
@@ -445,6 +448,45 @@ public class LdapUpdate extends LdapModifyOperation {
             throw new ConnectorException("Insufficient Access Rights to perform");
         } catch (NamingException e) {
             throw new ConnectorException(e);
+        }
+    }
+
+    /**
+     * Handle password reset for user with specified DN.
+     * @param dn User distinguished name to handler password reset to. Never null.
+     * @param modifications List with attribute modifications. Never null.
+     * @param context {@link LdapContext} instance to perform reset. Never null.
+     */
+    private void handlePasswordReset(String dn, List<ModificationItem> modifications, LdapContext context) {
+        try {
+            doHandlePasswordReset(dn, modifications, context);
+        } catch (NamingException e) {
+            throw new ConnectorException(e);
+        }
+    }
+
+    /**
+     * @see LdapUpdate#handlePasswordReset(String, List, LdapContext)
+     */
+    private void doHandlePasswordReset(String dn, List<ModificationItem> modifications, LdapContext context) throws NamingException {
+        // Extract password reset control from operation options
+        String control = options != null ? (String) options.getOptions().get("PWD_RESET_CONTROL") : null;
+        if (control == null) {
+            // No request controls specified, perform modification with original context
+            modifyAttributes(dn, modifications, context);
+            return;
+        }
+        // Prepare byte array value to enable specified password reset control
+        final byte[] value = { 48, (byte) 132, 0, 0, 0, 3, 2, 1, 1 };
+        // Prepare array with parsed controls
+        Control[] parsed = new Control[] { new BasicControl(control, true, value) };
+        // Perform LDAP update with request control context
+        LdapContext controlsContext = null;
+        try {
+            controlsContext = context != null ? context.newInstance(parsed) : conn.getInitialContext().newInstance(parsed);
+            modifyAttributes(dn, modifications, controlsContext);
+        } finally {
+            controlsContext.close();
         }
     }
 
